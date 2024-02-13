@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "9dc751af16e144cebd34a1d330c3b1e7",
+    "content-hash": "aa322c53454393ed775cfe4807d54a50",
     "packages": [
         {
             "name": "brick/math",
@@ -1759,55 +1759,6 @@
                 }
             ],
             "time": "2022-04-17T13:12:02+00:00"
-        },
-        {
-            "name": "lyracom/rest-php-sdk",
-            "version": "4.0.4",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/lyra/rest-php-sdk.git",
-                "reference": "3af7d3d22faf02b79d025afb25cc2ade1d3d68c7"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/lyra/rest-php-sdk/zipball/3af7d3d22faf02b79d025afb25cc2ade1d3d68c7",
-                "reference": "3af7d3d22faf02b79d025afb25cc2ade1d3d68c7",
-                "shasum": ""
-            },
-            "require": {
-                "ext-json": "*",
-                "php": ">=5.4.0"
-            },
-            "require-dev": {
-                "phpunit/phpunit": "6.5.*"
-            },
-            "suggest": {
-                "ext-curl": "*"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-4": {
-                    "": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "description": "Lyra REST API PHP SDK",
-            "keywords": [
-                "api",
-                "creditcard",
-                "lyra",
-                "payment",
-                "rest",
-                "sdk"
-            ],
-            "support": {
-                "issues": "https://github.com/lyra/rest-php-sdk/issues",
-                "source": "https://github.com/lyra/rest-php-sdk/tree/4.0.4"
-            },
-            "time": "2021-02-23T14:11:12+00:00"
         },
         {
             "name": "monolog/monolog",

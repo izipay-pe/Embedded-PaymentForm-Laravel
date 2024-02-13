@@ -56,7 +56,7 @@ Mueve el proyecto descargado a la carpeta de instalación de proyectos de xammp 
 3. Inicia los servicios de Apache y MySQL desde el panel de control de XAMPP.
 Acceder al Proyecto:
 
-4. Abre tu navegador y visita para ver tu proyecto Laravel.
+4. Abre tu navegador e ingresa a la siguiente url con el nombre de la carpeta del proyecto.
 ```sh
 http://localhost/[carpeta_laravel]/public
 ```
@@ -65,14 +65,14 @@ http://localhost/[carpeta_laravel]/public
 
 **Nota**: Reemplace **[CHANGE_ME]** con sus credenciales de `API REST` extraídas desde el Back Office Vendedor, ver [Requisitos Previos](#Requisitos_Previos).
 
-- Editar la última sección del archivo `.env` con sus credenciles:
+- Renombre el archivo `ejemplo.env` a `.env` y edite la última sección con sus credenciles:
 
-```bash
-IZIPAY_USERNAME=44532503
-IZIPAY_PASSWORD=testpassword_x0ZDVlzhOnkCMiSGpOQ9rLbQUlKYmunHSfI5SN54avffE
+```sh
+IZIPAY_USERNAME=12345678
+IZIPAY_PASSWORD=testpassword_x0ZDVlzhOnkCSDAsaspOQ9rLbQUlKYmunHSfI5SsaswSDWss
 IZIPAY_ENDPOINT=https://api.micuentaweb.pe
-IZIPAY_PUBLIC_KEY=44532503:testpublickey_csSdGM0KnIzIy0hYRj29NoDYjBKV6uDAfP42sIonUhG7u
-IZIPAY_SHA256_KEY=WLYdcwRkqenw7j9hgKmZU4yhQ91gnqQ36S95YwBh7ByE8
+IZIPAY_PUBLIC_KEY=12345678:testpublickey_csSdSDASdssSDachYRj29NoDYjBKV6uDAfP42sSDSScxc7u
+IZIPAY_SHA256_KEY=WLYdcwRkWCSfasFHGHJdasyhQ91gnqQ36S95YwBh7ByE8
 IZIPAY_CLIENT_ENDPOINT=https://static.micuentaweb.pe
 ```
 

@@ -2,23 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use Exception;
 use Illuminate\Http\Request;
 
 use Lyra\Client;
 use Lyra\Exceptions\LyraException;
+
 class IzipayController extends Controller
 {
     private $client;
 
     public function __construct()
     {
-        $this->client = new Client();
-        $this->client->setUsername(env('IZIPAY_USERNAME'));
-        $this->client->setPassword(env('IZIPAY_PASSWORD'));
-        $this->client->setEndpoint(env('IZIPAY_ENDPOINT'));
-        $this->client->setPublicKey(env('IZIPAY_PUBLIC_KEY'));
-        $this->client->setSHA256Key(env('IZIPAY_SHA256_KEY'));
-        $this->client->setClientEndpoint(env('IZIPAY_CLIENT_ENDPOINT'));
     }
 
     public function getFormToken()
@@ -31,12 +26,12 @@ class IzipayController extends Controller
                 "email" => "sample@example.com",
             )
         );
-        $response = $this->client->post("V4/Charge/CreatePayment", $store);
+        $response = $this->post("V4/Charge/CreatePayment", $store);
 
         if ($response['status'] != 'SUCCESS') {
             echo ($response);
             $error = $response['answer'];
-            throw new LyraException("error " . $error['errorCode'] . ": " . $error['errorMessage']);
+            throw ("error " . $error['errorCode'] . ": " . $error['errorMessage']);
         }
 
         $formToken = $response["answer"]["formToken"];
@@ -45,13 +40,16 @@ class IzipayController extends Controller
 
     public function success(Request $request)
     {
-        if (empty($_POST)) throw new LyraException("no post data received!");
+        if (empty($_POST)) throw ("no post data received!");
 
-        $formAnswer = $this->client->getParsedFormAnswer();
+        $formAnswer['kr-hash'] = $_POST['kr-hash'];
+        $formAnswer['kr-hash-algorithm'] = $_POST['kr-hash-algorithm'];
+        $formAnswer['kr-answer-type'] = $_POST['kr-answer-type'];
+        $formAnswer['kr-answer'] = json_decode($_POST['kr-answer'], true);
 
-        if (!$this->client->checkHash()) {
+        if (!$this->checkHash()) {
             //something wrong, probably a fraud ....
-            throw new LyraException('invalid signature');
+            throw ('invalid signature');
         }
 
         if ($formAnswer['kr-answer']['orderStatus'] != 'PAID') {
@@ -65,11 +63,15 @@ class IzipayController extends Controller
 
     public function notificationIpn(Request $request)
     {
-        if (empty($_POST)) throw new LyraException('no post data received!');
-        if (!$this->client->checkHash()) throw new LyraException('invalid signature');
+        if (empty($_POST)) throw 'no post data received!';
+        if (!$this->checkHash()) throw 'invalid signature';
 
         /* Retrieve the IPN content */
-        $rawAnswer = $this->client->getParsedFormAnswer();
+        $rawAnswer['kr-hash'] = $_POST['kr-hash'];
+        $rawAnswer['kr-hash-algorithm'] = $_POST['kr-hash-algorithm'];
+        $rawAnswer['kr-answer-type'] = $_POST['kr-answer-type'];
+        $rawAnswer['kr-answer'] = json_decode($_POST['kr-answer'], true);
+
         $formAnswer = $rawAnswer['kr-answer'];
         /* Retrieve the transaction id from the IPN data */
         $transaction = $formAnswer['transactions'][0];
@@ -77,14 +79,7 @@ class IzipayController extends Controller
         $orderStatus = $formAnswer['orderStatus'];
         $orderId = $formAnswer['orderDetails']['orderId'];
         $transactionUuid = $transaction['uuid'];
-        /* I update my database if needed */
-        /* Add here your custom code */
 
-        /**
-         * Message returned to the IPN caller
-         * You can return want you want but
-         * HTTP response code should be 200
-         */
         print 'OK! OrderStatus is ' . $orderStatus;
     }
 
@@ -94,20 +89,20 @@ class IzipayController extends Controller
         $store = array(
             "amount" => 250,
             "currency" => "PEN",
-            "orderId" => uniqid("MyOrderId"),
+            "orderId" => uniqid("MyOrderId-"),
             "customer" => array(
                 "email" => "sample@example.com"
             )
         );
 
-        $response = $this->client->post("V4/Charge/CreatePayment", $store);
+        $response = $this->post("V4/Charge/CreatePayment", $store);
 
         /* I check if there are some errors */
         if ($response['status'] != 'SUCCESS') {
             /* an error occurs, I throw an exception */
             echo ($response);
             $error = $response['answer'];
-            throw new LyraException("error " . $error['errorCode'] . ": " . $error['errorMessage']);
+            throw ("error " . $error['errorCode'] . ": " . $error['errorMessage']);
         }
         /* everything is fine, I extract the formToken */
         $formToken = $response["answer"]["formToken"];
@@ -118,5 +113,42 @@ class IzipayController extends Controller
         ];
 
         return response()->json($data);
+    }
+
+
+
+    private function post(string $target, array $datos)
+    {
+        $auth = env('IZIPAY_USERNAME') . ":" . env('IZIPAY_PASSWORD');
+        $url = env('IZIPAY_ENDPOINT') . "/api-payment/" . $target;
+        $curl = curl_init($url);
+        curl_setopt($curl, CURLOPT_HEADER, false);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($curl, CURLOPT_HTTPHEADER, array("Content-type: application/json"));
+        curl_setopt($curl, CURLOPT_POST, true);
+        curl_setopt($curl, CURLOPT_USERPWD, $auth);
+        curl_setopt($curl, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
+        curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($datos));
+        $raw_response = curl_exec($curl);
+        $response = json_decode($raw_response, true);
+        return $response;
+    }
+
+    private function checkHash()
+    {
+        if (!in_array($_POST["kr-hash-algorithm"], array("sha256_hmac"))) return false;
+
+        if ($_POST['kr-hash-algorithm'] == "sha256_hmac") {
+            $key = env('IZIPAY_SHA256_KEY');
+        } elseif ($_POST['kr-hash-algorithm'] == "password") {
+            $key = env('IZIPAY_PASSWORD');
+        } else {
+            return false;
+        }
+        /* on some servers, / can be escaped */
+        $krAnswer = str_replace('\/', '/',  $_POST["kr-answer"]);
+        $calculateHash = hash_hmac("sha256", $krAnswer, $key);
+
+        return ($calculateHash == $_POST["kr-hash"]);
     }
 }
