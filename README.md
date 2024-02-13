@@ -68,11 +68,11 @@ http://localhost/[carpeta_laravel]/public
 - Renombre el archivo `ejemplo.env` a `.env` y edite la última sección con sus credenciles:
 
 ```sh
-IZIPAY_USERNAME=12345678
-IZIPAY_PASSWORD=testpassword_x0ZDVlzhOnkCSDAsaspOQ9rLbQUlKYmunHSfI5SsaswSDWss
+IZIPAY_USERNAME=**[CHANGE_ME]**
+IZIPAY_PASSWORD=**[CHANGE_ME]**
 IZIPAY_ENDPOINT=https://api.micuentaweb.pe
-IZIPAY_PUBLIC_KEY=12345678:testpublickey_csSdSDASdssSDachYRj29NoDYjBKV6uDAfP42sSDSScxc7u
-IZIPAY_SHA256_KEY=WLYdcwRkWCSfasFHGHJdasyhQ91gnqQ36S95YwBh7ByE8
+IZIPAY_PUBLIC_KEY=**[CHANGE_ME]**
+IZIPAY_SHA256_KEY=**[CHANGE_ME]**
 IZIPAY_CLIENT_ENDPOINT=https://static.micuentaweb.pe
 ```
 
