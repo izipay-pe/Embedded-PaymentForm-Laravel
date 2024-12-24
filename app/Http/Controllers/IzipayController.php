@@ -5,20 +5,41 @@ namespace App\Http\Controllers;
 use Exception;
 use Illuminate\Http\Request;
 
-use Lyra\Client;
-use Lyra\Exceptions\LyraException;
 
 class IzipayController extends Controller
 {
-    private $client;
-
-    public function __construct()
-    {
+    public function index(){
+        return view('izipay.index');
     }
+
+    public function checkout(){
+
+        $formToken = $this->getFormToken();
+        $publicKey = env("IZIPAY_PUBLIC_KEY");
+
+        return view('izipay.checkout', compact("publicKey", "formToken"));
+    }
+
+    public function result(Request $request){
+        if (empty($request)) {
+            throw new Exception("No post data received!");
+        }
+          
+        // Validación de firma
+        if (!$this->checkHash($request)) {
+            throw new Exception("Invalid signature");
+        }
+        
+        $answer = json_decode($request['kr-answer'], true);
+        $orderStatus = $answer['orderStatus'];
+
+        return view('izipay.result', compact('orderStatus', 'answer'));
+    }
+
 
     public function getFormToken()
     {
-        $store = array(
+        $datos = array(
             "amount" => 250,
             "currency" => "PEN",
             "orderId" => uniqid("MyOrderId"),
@@ -26,101 +47,10 @@ class IzipayController extends Controller
                 "email" => "sample@example.com",
             )
         );
-        $response = $this->post("V4/Charge/CreatePayment", $store);
 
-        if ($response['status'] != 'SUCCESS') {
-            echo ($response);
-            $error = $response['answer'];
-            throw ("error " . $error['errorCode'] . ": " . $error['errorMessage']);
-        }
-
-        $formToken = $response["answer"]["formToken"];
-        return view('izipay.incrustado', compact('formToken'));
-    }
-
-    public function success(Request $request)
-    {
-        if (empty($_POST)) throw ("no post data received!");
-
-        $formAnswer['kr-hash'] = $_POST['kr-hash'];
-        $formAnswer['kr-hash-algorithm'] = $_POST['kr-hash-algorithm'];
-        $formAnswer['kr-answer-type'] = $_POST['kr-answer-type'];
-        $formAnswer['kr-answer'] = json_decode($_POST['kr-answer'], true);
-
-        if (!$this->checkHash()) {
-            //something wrong, probably a fraud ....
-            throw ('invalid signature');
-        }
-
-        if ($formAnswer['kr-answer']['orderStatus'] != 'PAID') {
-            return 'Transaction not paid !';
-        } else {
-            $dataPost = json_encode($_POST, JSON_PRETTY_PRINT);
-            $formAnswer = json_encode($formAnswer["kr-answer"], JSON_PRETTY_PRINT);
-            return view('izipay.paid', compact('formAnswer', 'dataPost'));
-        }
-    }
-
-    public function notificationIpn(Request $request)
-    {
-        if (empty($_POST)) throw 'no post data received!';
-        if (!$this->checkHash()) throw 'invalid signature';
-
-        /* Retrieve the IPN content */
-        $rawAnswer['kr-hash'] = $_POST['kr-hash'];
-        $rawAnswer['kr-hash-algorithm'] = $_POST['kr-hash-algorithm'];
-        $rawAnswer['kr-answer-type'] = $_POST['kr-answer-type'];
-        $rawAnswer['kr-answer'] = json_decode($_POST['kr-answer'], true);
-
-        $formAnswer = $rawAnswer['kr-answer'];
-        /* Retrieve the transaction id from the IPN data */
-        $transaction = $formAnswer['transactions'][0];
-        /* get some parameters from the answer */
-        $orderStatus = $formAnswer['orderStatus'];
-        $orderId = $formAnswer['orderDetails']['orderId'];
-        $transactionUuid = $transaction['uuid'];
-
-        print 'OK! OrderStatus is ' . $orderStatus;
-    }
-
-    public function createPayment(Request $request)
-    {
-
-        $store = array(
-            "amount" => 250,
-            "currency" => "PEN",
-            "orderId" => uniqid("MyOrderId-"),
-            "customer" => array(
-                "email" => "sample@example.com"
-            )
-        );
-
-        $response = $this->post("V4/Charge/CreatePayment", $store);
-
-        /* I check if there are some errors */
-        if ($response['status'] != 'SUCCESS') {
-            /* an error occurs, I throw an exception */
-            echo ($response);
-            $error = $response['answer'];
-            throw ("error " . $error['errorCode'] . ": " . $error['errorMessage']);
-        }
-        /* everything is fine, I extract the formToken */
-        $formToken = $response["answer"]["formToken"];
-
-        $data = [
-            'status' => 200,
-            'formToken' => $formToken
-        ];
-
-        return response()->json($data);
-    }
-
-
-
-    private function post(string $target, array $datos)
-    {
         $auth = env('IZIPAY_USERNAME') . ":" . env('IZIPAY_PASSWORD');
-        $url = env('IZIPAY_ENDPOINT') . "/api-payment/" . $target;
+        $url = "https://api.micuentaweb.pe/api-payment/V4/Charge/CreatePayment";
+
         $curl = curl_init($url);
         curl_setopt($curl, CURLOPT_HEADER, false);
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
@@ -129,26 +59,55 @@ class IzipayController extends Controller
         curl_setopt($curl, CURLOPT_USERPWD, $auth);
         curl_setopt($curl, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
         curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($datos));
+        curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, false);
+        curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
+
         $raw_response = curl_exec($curl);
         $response = json_decode($raw_response, true);
-        return $response;
+
+        if ($response['status'] != 'SUCCESS') {
+            echo ($response);
+            $error = $response['answer'];
+            throw ("error " . $error['errorCode'] . ": " . $error['errorMessage']);
+        }
+
+        return  $response["answer"]["formToken"];
     }
 
-    private function checkHash()
+    public function ipn(Request $request)
     {
-        if (!in_array($_POST["kr-hash-algorithm"], array("sha256_hmac"))) return false;
+       
+        if (empty($request)) throw new Exception("No post data received!");
 
-        if ($_POST['kr-hash-algorithm'] == "sha256_hmac") {
+        // Validación de firma en IPN
+        if (!$this->checkHash($request)) throw new Exception("Invalid signature");
+
+        // Ejemplos de extracción de datos
+        $answer = json_decode($request["kr-answer"], true);
+        $transaction = $answer['transactions'][0];
+        
+        // Verifica orderStatus PAID
+        $orderStatus = $answer['orderStatus'];
+        $orderId = $answer['orderDetails']['orderId'];
+        $transactionUuid = $transaction['uuid'];
+
+        print 'OK! OrderStatus is ' . $orderStatus;
+    }
+
+
+    private function checkHash(Request $request)
+    {
+        if ($request['kr-hash-key'] == "sha256_hmac") {
             $key = env('IZIPAY_SHA256_KEY');
-        } elseif ($_POST['kr-hash-algorithm'] == "password") {
+        } elseif ($request['kr-hash-key'] == "password") {
             $key = env('IZIPAY_PASSWORD');
         } else {
             return false;
         }
-        /* on some servers, / can be escaped */
-        $krAnswer = str_replace('\/', '/',  $_POST["kr-answer"]);
+
+        $krAnswer = str_replace('\/', '/',  $request["kr-answer"]);
         $calculateHash = hash_hmac("sha256", $krAnswer, $key);
 
-        return ($calculateHash == $_POST["kr-hash"]);
+        return ($calculateHash == $request["kr-hash"]);
     }
 }
