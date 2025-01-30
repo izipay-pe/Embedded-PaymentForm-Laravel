@@ -104,10 +104,10 @@ class IzipayController extends Controller
         $orderId = $answer['orderDetails']['orderId'];
         $transactionUuid = $transaction['uuid'];
 
-        print 'OK! OrderStatus is ' . $orderStatus;
+        return 'OK! OrderStatus is ' . $orderStatus;
     }
 
-    private function checkHash(Request $request, $key)
+    private function checkHash($request, $key)
     {
         $krAnswer = str_replace('\/', '/',  $request["kr-answer"]);
         
