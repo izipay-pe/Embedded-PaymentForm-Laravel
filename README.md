@@ -186,7 +186,7 @@ Body:
 Se configura la función `checkHash` que realizará la validación de los datos recibidos por el servidor luego de realizar el pago mediante el parámetro `kr-answer` utilizando una clave de encriptación definida en `key`. Podrás encontrarlo en el archivo `./resources/views/izipay/checkout.blade.php`.
 
 ```php
-private function checkHash(Request $request, $key)
+private function checkHash($request, $key)
 {
     $krAnswer = str_replace('\/', '/',  $request["kr-answer"]);
     
@@ -240,7 +240,7 @@ public function ipn(Request $request)
     $orderId = $answer['orderDetails']['orderId'];
     $transactionUuid = $transaction['uuid'];
 
-    print 'OK! OrderStatus is ' . $orderStatus;
+    return 'OK! OrderStatus is ' . $orderStatus;
 }
 ```
 
