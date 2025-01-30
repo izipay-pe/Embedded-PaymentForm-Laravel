@@ -8,11 +8,13 @@ use Illuminate\Http\Request;
 
 class IzipayController extends Controller
 {
-    public function index(){
+    public function index()
+    {
         return view('izipay.index');
     }
 
-    public function checkout(Request $request){
+    public function checkout(Request $request)
+    {
         // URL de Web Service REST
         $url = "https://api.micuentaweb.pe/api-payment/V4/Charge/CreatePayment";
 
