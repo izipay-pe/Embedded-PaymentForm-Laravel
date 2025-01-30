@@ -32,6 +32,7 @@ Este manual está diseñado para ayudarte a comprender el flujo de la integraci�
 
 - Comprender el flujo de comunicación de la pasarela. [Información Aquí](https://secure.micuentaweb.pe/doc/es-PE/rest/V4.0/javascript/guide/start.html)
 - Extraer credenciales del Back Office Vendedor. [Guía Aquí](https://github.com/izipay-pe/obtener-credenciales-de-conexion)
+- Para este proyecto se utiliza Laravel Framework 10.15.0
 - Para este proyecto utilizamos la herramienta Visual Studio Code.
 - Servidor Web
 - PHP 7.0 o superior
